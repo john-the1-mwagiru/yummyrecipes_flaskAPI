@@ -1,10 +1,12 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, make_response
 from flask_migrate import Migrate
 from marshmallow import Schema, fields
 from werkzeug.security import generate_password_hash, check_password_hash
 from models import Users, UserSchema, db
 import datetime
+import jwt
 import re
+
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "asecret"
@@ -50,6 +52,35 @@ def register():
     serializer = UserSchema()
     data = serializer.dump(new_user)
     return jsonify(data), 201
+
+
+@app.route("/auth/login")
+def login():
+    auth = request.authorization
+
+    if not auth or not auth.username or not auth.password:
+        return make_response(
+            "Could not verify",
+            401,
+            {"WWW-Authenticate": 'Basic realm="Login required!"'},
+        )
+    user = Users.query.filter_by(name=auth.username).first()
+    if not user:
+        return jsonify({"message": "No user found!"})
+    if check_password_hash(user.password_hash, auth.password):
+        token = jwt.encode(
+            {
+                "userid": user.id,
+                "exp": datetime.datetime.utcnow() + datetime.timedelta(minutes=30),
+            },
+            app.config["SECRET_KEY"],
+        )
+        return jsonify({"token": token})
+    return make_response(
+        "Could not verify",
+        401,
+        {"WWW-Authenticate": 'Basic realm="Login required!"'},
+    )
 
 
 if __name__ == "__main__":
