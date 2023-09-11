@@ -5,7 +5,7 @@ from functools import wraps
 from marshmallow import Schema, fields
 from itsdangerous import URLSafeTimedSerializer
 from werkzeug.security import generate_password_hash, check_password_hash
-from models import Users, UserSchema, db
+from models import Users, UserSchema, db, Categories, CategorySchema
 import datetime
 import jwt
 import re
@@ -55,6 +55,22 @@ def token_required(f):
         return f(current_user, *args, **kwargs)
 
     return decorated
+
+
+@app.route("/categories", methods=["GET"])
+@token_required
+def get_all_categories(current_user):
+    token = request.headers["x-access-token"]
+    data = jwt.decode(token, app.config["SECRET_KEY"], algorithms=["HS256"])
+    categories = [
+        category
+        for category in Categories.get_all()
+        if category.user_id == data["userid"]
+    ]
+    serializer = CategorySchema(many=True)
+    new_data = serializer.dump(categories)
+
+    return jsonify(new_data)
 
 
 @app.route("/auth/register", methods=["POST"])
