@@ -203,5 +203,19 @@ def create_categories(current_user):
     return jsonify({"error": "category name already exists"})
 
 
+@app.route("/categories/<int:id>", methods=["GET"])
+@token_required
+def get_category(current_user, id):
+    token = request.headers["x-access-token"]
+    data = jwt.decode(token, app.config["SECRET_KEY"], algorithms=["HS256"])
+    categories = Categories.query.filter(Categories.user_id == data["userid"])
+    for category in categories:
+        if category.id == id:
+            serializer = CategorySchema()
+            acategory = serializer.dump(category)
+            return jsonify(acategory), 200
+    return jsonify({"error": "category does not exist"}), 400
+
+
 if __name__ == "__main__":
     app.run(debug=True)
