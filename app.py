@@ -217,5 +217,28 @@ def get_category(current_user, id):
     return jsonify({"error": "category does not exist"}), 400
 
 
+@app.route("/categories/<int:id>/edit", methods=["PUT"])
+@token_required
+def edit_category(current_user, id):
+    edited_name = request.json["name"]
+    edited_description = request.json["description"]
+    token = request.headers["x-access-token"]
+    data = jwt.decode(token, app.config["SECRET_KEY"], algorithms=["HS256"])
+    categories = Categories.query.filter(Categories.user_id == data["userid"])
+    for category in categories:
+        if category.id == id:
+            edited_category = Categories(
+                id=category.id,
+                name=edited_name,
+                description=edited_description,
+                user_id=category.user_id,
+            )
+            updated_category = Categories.edit(id, edited_category)
+            serializer = CategorySchema()
+            new_data = serializer.dump(updated_category)
+            return jsonify(new_data), 200
+    return jsonify({"error": "category does not exist"}), 400
+
+
 if __name__ == "__main__":
     app.run(debug=True)
