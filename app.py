@@ -1,6 +1,7 @@
 from flask import Flask, jsonify, request, make_response
 from flask_migrate import Migrate
 from flask_mail import Mail, Message
+from functools import wraps
 from marshmallow import Schema, fields
 from itsdangerous import URLSafeTimedSerializer
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -32,6 +33,28 @@ app.config.update(
     )
 )
 mail = Mail(app)
+
+
+def token_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        token = None
+        if "x-access-token" in request.headers:
+            token = request.headers["x-access-token"]
+        if not token:
+            return (
+                jsonify({"message": "Authentication Token is missing!", "data": None}),
+                401,
+            )
+        try:
+            data = jwt.decode(token, app.config["SECRET_KEY"], algorithms=["HS256"])
+            current_user = Users.query.get(data["userid"])
+        except Exception as e:
+            return jsonify({"message": "Something went wrong"}), 401
+
+        return f(current_user, *args, **kwargs)
+
+    return decorated
 
 
 @app.route("/auth/register", methods=["POST"])
