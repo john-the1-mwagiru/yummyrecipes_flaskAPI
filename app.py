@@ -1,6 +1,8 @@
 from flask import Flask, jsonify, request, make_response
 from flask_migrate import Migrate
+from flask_mail import Mail, Message
 from marshmallow import Schema, fields
+from itsdangerous import URLSafeTimedSerializer
 from werkzeug.security import generate_password_hash, check_password_hash
 from models import Users, UserSchema, db
 import datetime
@@ -13,9 +15,23 @@ app.config["SECRET_KEY"] = "asecret"
 app.config[
     "SQLALCHEMY_DATABASE_URI"
 ] = "postgresql://postgres:Kenya2030**@localhost:5433/Yummy Recipes"
-# migrate = Migrate(app, db)
+migrate = Migrate(app, db)
 db.init_app(app)
+s = URLSafeTimedSerializer(app.config["SECRET_KEY"])
+
 email_regex = r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,7}\b"
+app.config.update(
+    dict(
+        DEBUG=True,
+        MAIL_SERVER="smtp.gmail.com",
+        MAIL_PORT=587,
+        MAIL_USE_TLS=True,
+        MAIL_USE_SSL=False,
+        MAIL_USERNAME="john.the1.mwagiru@gmail.com",
+        MAIL_PASSWORD="fbvvwlltrhicvicv",
+    )
+)
+mail = Mail(app)
 
 
 @app.route("/auth/register", methods=["POST"])
@@ -81,6 +97,45 @@ def login():
         401,
         {"WWW-Authenticate": 'Basic realm="Login required!"'},
     )
+
+
+@app.route("/auth/forgot-password", methods=["POST"])
+def forgot_password():
+    if request.method == "POST":
+        email = request.json["email"]
+        if Users.query.filter_by(email=request.json["email"]).first() is None:
+            return jsonify({"error": "Email does not exist!"}), 400
+
+        token = s.dumps(email, salt="recovery-key")
+        link = "http://localhost:5000/reset-password/"
+        msg = Message(
+            f"Hello from the other side!",
+            sender="john.the1.mwagiru@gmail.com",
+            recipients=[email],
+        )
+        msg.body = f"Hey, follow this {link}{token} to reset your password"
+        mail.send(msg)
+        return jsonify({"token": token}), 200
+
+
+@app.route("/auth/reset-password/<token>", methods=["POST"])
+def reset_password(token):
+    password = request.json["password_hash"]
+    try:
+        email = s.loads(token, salt="recovery-key", max_age=60 * 10)
+        user = Users.query.filter(Users.email == email)
+
+        if user:
+            for auser in user:
+                auser.password_hash = generate_password_hash(password, method="sha256")
+                db.session.commit()
+                serializer = UserSchema()
+                data = serializer.dump(auser)
+                return jsonify(data), 200
+        if not user:
+            return jsonify({"error": "error"}), 400
+    except:
+        return jsonify({"error": "no user"}), 400
 
 
 if __name__ == "__main__":
