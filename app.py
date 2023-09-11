@@ -5,7 +5,15 @@ from functools import wraps
 from marshmallow import Schema, fields
 from itsdangerous import URLSafeTimedSerializer
 from werkzeug.security import generate_password_hash, check_password_hash
-from models import Users, UserSchema, db, Categories, CategorySchema
+from models import (
+    Users,
+    UserSchema,
+    db,
+    Categories,
+    CategorySchema,
+    Recipes,
+    RecipeSchema,
+)
 import datetime
 import jwt
 import re
@@ -55,22 +63,6 @@ def token_required(f):
         return f(current_user, *args, **kwargs)
 
     return decorated
-
-
-@app.route("/categories", methods=["GET"])
-@token_required
-def get_all_categories(current_user):
-    token = request.headers["x-access-token"]
-    data = jwt.decode(token, app.config["SECRET_KEY"], algorithms=["HS256"])
-    categories = [
-        category
-        for category in Categories.get_all()
-        if category.user_id == data["userid"]
-    ]
-    serializer = CategorySchema(many=True)
-    new_data = serializer.dump(categories)
-
-    return jsonify(new_data)
 
 
 @app.route("/auth/register", methods=["POST"])
@@ -175,6 +167,40 @@ def reset_password(token):
             return jsonify({"error": "error"}), 400
     except:
         return jsonify({"error": "no user"}), 400
+
+
+@app.route("/categories", methods=["GET"])
+@token_required
+def get_all_categories(current_user):
+    token = request.headers["x-access-token"]
+    data = jwt.decode(token, app.config["SECRET_KEY"], algorithms=["HS256"])
+    categories = [
+        category
+        for category in Categories.get_all()
+        if category.user_id == data["userid"]
+    ]
+    serializer = CategorySchema(many=True)
+    new_data = serializer.dump(categories)
+
+    return jsonify(new_data)
+
+
+@app.route("/categories", methods=["POST"])
+@token_required
+def create_categories(current_user):
+    token = request.headers["x-access-token"]
+    data = jwt.decode(token, app.config["SECRET_KEY"], algorithms=["HS256"])
+    if Categories.query.filter_by(name=request.json["name"]).first() is None:
+        new_category = Categories(
+            name=request.json["name"],
+            description=request.json["description"],
+            user_id=data["userid"],
+        )
+        new = Categories.create(new_category)
+        serializer = CategorySchema()
+        newcategory = serializer.dump(new)
+        return jsonify(newcategory), 200
+    return jsonify({"error": "category name already exists"})
 
 
 if __name__ == "__main__":
