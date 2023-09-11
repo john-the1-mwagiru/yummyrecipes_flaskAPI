@@ -1,7 +1,9 @@
+from flask_sqlalchemy import SQLAlchemy
 from flask import jsonify
 from marshmallow import Schema, fields
 import datetime
-from app import app, db
+
+db = SQLAlchemy()
 
 
 class Users(db.Model):
