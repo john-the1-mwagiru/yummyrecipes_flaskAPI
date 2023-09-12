@@ -296,5 +296,19 @@ def get_all_recipes(current_user):
     return jsonify(all_recipes, meta), 200
 
 
+@app.route("/recipes/<int:id>", methods=["GET"])
+@token_required
+def get_recipe(current_user, id):
+    token = request.headers["x-access-token"]
+    data = jwt.decode(token, app.config["SECRET_KEY"], algorithms=["HS256"])
+    recipes = Recipes.query.filter(Recipes.user_id == data["userid"])
+    for recipe in recipes:
+        if recipe.id == id:
+            serializer = RecipeSchema()
+            arecipe = serializer.dump(recipe)
+            return jsonify(arecipe), 200
+    return jsonify({"error": "recipe was not found"}), 404
+
+
 if __name__ == "__main__":
     app.run(debug=True)
