@@ -116,8 +116,9 @@ class Categories(db.Model):
 
     @classmethod
     def delete(cls, id):
-        category = Users.get(id)
-        del category
+        category = Categories.get(id)
+        db.session.delete(category)
+        db.session.commit()
 
         return jsonify({"message": "category deleted!"})
 
