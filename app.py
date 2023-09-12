@@ -335,5 +335,17 @@ def edit_recipe(current_user, id):
     return jsonify({"error": "something went wrong!"}), 400
 
 
+@app.route("/recipes/<int:id>/delete", methods=["DELETE"])
+def delete_recipe(id):
+    token = request.headers["x-access-token"]
+    data = jwt.decode(token, app.config["SECRET_KEY"], algorithms=["HS256"])
+    recipes = Recipes.query.filter(Recipes.user_id == data["userid"])
+    for recipe in recipes:
+        if recipe.id == id:
+            Recipes.delete(id)
+            return jsonify({"message": "Recipe was successfully deleted"}), 200
+    return jsonify({"error": "recipe was not found"}), 404
+
+
 if __name__ == "__main__":
     app.run(debug=True)
