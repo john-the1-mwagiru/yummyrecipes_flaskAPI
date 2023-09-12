@@ -252,5 +252,24 @@ def delete_category(id):
     return jsonify({"error": "category was not found"}), 400
 
 
+@app.route("/recipes", methods=["POST"])
+@token_required
+def create_recipes(current_user):
+    token = request.headers["x-access-token"]
+    data = jwt.decode(token, app.config["SECRET_KEY"], algorithms=["HS256"])
+    if Recipes.query.filter_by(name=request.json["name"]).first() is None:
+        new_recipe = Recipes(
+            name=request.json["name"],
+            ingredients=request.json["ingredients"],
+            directions=request.json["directions"],
+            category_id=request.json["category_id"],
+            user_id=data["userid"],
+        )
+        serializer = RecipeSchema()
+        newrecipe = serializer.dump(Recipes.create(new_recipe))
+        return jsonify(newrecipe), 201
+    return jsonify({"error": "something came up!"}), 400
+
+
 if __name__ == "__main__":
     app.run(debug=True)
