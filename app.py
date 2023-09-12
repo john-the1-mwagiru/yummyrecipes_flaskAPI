@@ -240,5 +240,17 @@ def edit_category(current_user, id):
     return jsonify({"error": "category does not exist"}), 400
 
 
+@app.route("/categories/<int:id>/delete", methods=["DELETE"])
+def delete_category(id):
+    token = request.headers["x-access-token"]
+    data = jwt.decode(token, app.config["SECRET_KEY"], algorithms=["HS256"])
+    categories = Categories.query.filter(Categories.user_id == data["userid"])
+    for category in categories:
+        if category.id == id:
+            Categories.delete(id)
+            return jsonify({"message": "Category was successfully deleted"}), 200
+    return jsonify({"error": "category was not found"}), 400
+
+
 if __name__ == "__main__":
     app.run(debug=True)
