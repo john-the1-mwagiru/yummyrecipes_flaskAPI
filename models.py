@@ -188,8 +188,9 @@ class Recipes(db.Model):
 
     @classmethod
     def delete(cls, id):
-        recipe = Users.get(id)
-        del recipe
+        recipe = Recipes.get(id)
+        db.session.delete(recipe)
+        db.session.commit()
 
         return jsonify({"message": "recipe deleted!"})
 
