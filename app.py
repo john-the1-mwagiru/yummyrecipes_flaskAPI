@@ -310,5 +310,30 @@ def get_recipe(current_user, id):
     return jsonify({"error": "recipe was not found"}), 404
 
 
+@app.route("/recipes/<int:id>/edit", methods=["PUT"])
+@token_required
+def edit_recipe(current_user, id):
+    edited_name = request.json["name"]
+    edited_ingredients = request.json["ingredients"]
+    edited_directions = request.json["directions"]
+    token = request.headers["x-access-token"]
+    data = jwt.decode(token, app.config["SECRET_KEY"], algorithms=["HS256"])
+    recipes = Recipes.query.filter(Recipes.user_id == data["userid"])
+    for recipe in recipes:
+        if recipe.id == id:
+            edited_recipe = Recipes(
+                id=recipe.id,
+                name=edited_name,
+                ingredients=edited_ingredients,
+                directions=edited_directions,
+                category_id=recipe.category_id,
+                user_id=recipe.user_id,
+            )
+            serializer = RecipeSchema()
+            new_data = serializer.dump(Recipes.edit(id, edited_recipe))
+            return jsonify(new_data), 200
+    return jsonify({"error": "something went wrong!"}), 400
+
+
 if __name__ == "__main__":
     app.run(debug=True)
