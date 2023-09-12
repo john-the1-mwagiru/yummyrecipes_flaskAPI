@@ -271,5 +271,30 @@ def create_recipes(current_user):
     return jsonify({"error": "something came up!"}), 400
 
 
+@app.route("/recipes", methods=["GET"])
+@token_required
+def get_all_recipes(current_user):
+    token = request.headers["x-access-token"]
+    data = jwt.decode(token, app.config["SECRET_KEY"], algorithms=["HS256"])
+    page = request.args.get("page", 1, type=int)
+    per_page = request.args.get("per_page", 3, type=int)
+    recipes = Recipes.query.filter_by(user_id=data["userid"]).paginate(
+        page=page, per_page=per_page
+    )
+    serializer = RecipeSchema(many=True)
+    all_recipes = serializer.dump(recipes)
+
+    meta = {
+        "page": recipes.page,
+        "pages": recipes.pages,
+        "total_count": recipes.total,
+        "prev_page": recipes.prev_num,
+        "next_page": recipes.next_num,
+        "has_next": recipes.has_next,
+        "has_prev": recipes.has_prev,
+    }
+    return jsonify(all_recipes, meta), 200
+
+
 if __name__ == "__main__":
     app.run(debug=True)
