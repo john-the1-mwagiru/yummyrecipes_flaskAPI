@@ -13,6 +13,7 @@ from models import (
     CategorySchema,
     Recipes,
     RecipeSchema,
+    Blacklist,
 )
 import datetime
 import jwt
@@ -49,11 +50,15 @@ def token_required(f):
         token = None
         if "x-access-token" in request.headers:
             token = request.headers["x-access-token"]
+        check_token = Blacklist.query.filter_by(revoked_token=token).first()
+        if check_token:
+            return (jsonify({"message": "Session not available,Please log in"}), 401)
         if not token:
             return (
                 jsonify({"message": "Authentication Token is missing!", "data": None}),
                 401,
             )
+
         try:
             data = jwt.decode(token, app.config["SECRET_KEY"], algorithms=["HS256"])
             current_user = Users.query.get(data["userid"])
@@ -345,6 +350,15 @@ def delete_recipe(id):
             Recipes.delete(id)
             return jsonify({"message": "Recipe was successfully deleted"}), 200
     return jsonify({"error": "recipe was not found"}), 404
+
+
+@app.route("/auth/logout", methods=["POST"])
+@token_required
+def logout(current_user):
+    token = request.headers["x-access-token"]
+    invalid_token = Blacklist(revoked_token=token)
+    Blacklist.save(invalid_token)
+    return jsonify({"success": "successfully logged out"})
 
 
 if __name__ == "__main__":
