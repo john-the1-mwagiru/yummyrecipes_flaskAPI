@@ -204,3 +204,17 @@ class RecipeSchema(Schema):
     user_id = fields.Integer()
     date_created = fields.String()
     date_modified = fields.String()
+
+
+class Blacklist(db.Model):
+    __tablename__ = "blocklist"
+
+    token_id = db.Column(db.Integer, unique=True, primary_key=True)
+    revoked_token = db.Column(db.String(500), nullable=True)
+
+    def save(self):
+        db.session.add(self)
+        db.session.commit()
+
+    def __repr__(self):
+        return "<Revoked token: {}".format(self.revoked_token)
