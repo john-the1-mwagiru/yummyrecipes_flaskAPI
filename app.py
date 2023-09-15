@@ -179,15 +179,41 @@ def reset_password(token):
 def get_all_categories(current_user):
     token = request.headers["x-access-token"]
     data = jwt.decode(token, app.config["SECRET_KEY"], algorithms=["HS256"])
-    categories = [
-        category
-        for category in Categories.get_all()
-        if category.user_id == data["userid"]
-    ]
-    serializer = CategorySchema(many=True)
-    new_data = serializer.dump(categories)
+    q = request.args.get("q")
+    page = request.args.get("page", 1, type=int)
+    limit = request.args.get("limit")
+    my_categories = Categories.query.filter_by(user_id=data["userid"])
+    if limit:
+        try:
+            limit = int(limit)
+            if limit < 1:
+                return jsonify({"message": "Limit must be a positive number"}), 400
+        except Exception:
+            return jsonify({"message": "Check Limit Value!"})
+    else:
+        limit = 3
+    if q:
+        result = [key for key in my_categories if key.name == q]
+        serializer = CategorySchema(many=True)
+        query = serializer.dump(result)
+        return jsonify(query)
 
-    return jsonify(new_data)
+    categories = Categories.query.filter_by(user_id=data["userid"]).paginate(
+        page=page, per_page=limit
+    )
+    serializer = CategorySchema(many=True)
+    all_categories = serializer.dump(categories)
+
+    meta = {
+        "page": categories.page,
+        "pages": categories.pages,
+        "total_count": categories.total,
+        "prev_page": categories.prev_num,
+        "next_page": categories.next_num,
+        "has_next": categories.has_next,
+        "has_prev": categories.has_prev,
+    }
+    return jsonify(all_categories, meta)
 
 
 @app.route("/categories", methods=["POST"])
@@ -282,9 +308,26 @@ def get_all_recipes(current_user):
     token = request.headers["x-access-token"]
     data = jwt.decode(token, app.config["SECRET_KEY"], algorithms=["HS256"])
     page = request.args.get("page", 1, type=int)
-    per_page = request.args.get("per_page", 3, type=int)
+    myrecipes = Recipes.query.filter_by(user_id=data["userid"])
+    q = request.args.get("q")
+    limit = request.args.get("limit")
+    if limit:
+        try:
+            limit = int(limit)
+            if limit < 1:
+                return jsonify({"message": "Limit must be a positive number"}), 400
+        except Exception:
+            return jsonify({"message": "Check Limit Value!"})
+    else:
+        limit = 3
+    if q:
+        result = [key for key in myrecipes if key.name == q]
+        serializer = RecipeSchema(many=True)
+        query = serializer.dump(result)
+        return jsonify(query)
+
     recipes = Recipes.query.filter_by(user_id=data["userid"]).paginate(
-        page=page, per_page=per_page
+        page=page, per_page=limit
     )
     serializer = RecipeSchema(many=True)
     all_recipes = serializer.dump(recipes)
