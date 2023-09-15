@@ -37,6 +37,7 @@ class Users(db.Model):
         new_user = data
         db.session.add(new_user)
         db.session.commit()
+        
         return new_user
 
     @classmethod
@@ -46,6 +47,7 @@ class Users(db.Model):
         user.password_hash = data.password_hash
         user.name = data.name
         db.session.commit()
+        
         return user
 
     @classmethod
@@ -104,6 +106,7 @@ class Categories(db.Model):
         new_category = data
         db.session.add(new_category)
         db.session.commit()
+        
         return new_category
 
     @classmethod
@@ -112,6 +115,7 @@ class Categories(db.Model):
         category.name = data.name
         category.description = data.description
         db.session.commit()
+
         return category
 
     @classmethod
@@ -174,6 +178,7 @@ class Recipes(db.Model):
         new_recipe = data
         db.session.add(new_recipe)
         db.session.commit()
+
         return new_recipe
 
     @classmethod
