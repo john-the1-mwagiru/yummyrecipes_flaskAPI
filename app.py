@@ -103,10 +103,11 @@ def register():
     Users.create(new_user)
     serializer = UserSchema()
     data = serializer.dump(new_user)
+
     return jsonify(data), 201
 
 
-@app.route("/auth/login")
+@app.route("/auth/login", methods=["POST"])
 def login():
     auth = request.authorization
 
@@ -127,7 +128,9 @@ def login():
             },
             app.config["SECRET_KEY"],
         )
-        return jsonify({"token": token})
+
+        return jsonify({"token": token}), 200
+
     return make_response(
         "Could not verify",
         401,
@@ -151,6 +154,7 @@ def forgot_password():
         )
         msg.body = f"Hey, follow this {link}{token} to reset your password"
         mail.send(msg)
+
         return jsonify({"token": token}), 200
 
 
@@ -189,14 +193,15 @@ def get_all_categories(current_user):
             if limit < 1:
                 return jsonify({"message": "Limit must be a positive number"}), 400
         except Exception:
-            return jsonify({"message": "Check Limit Value!"})
+            return jsonify({"message": "Check Limit Value!"}), 400
     else:
         limit = 3
     if q:
         result = [key for key in my_categories if key.name == q]
         serializer = CategorySchema(many=True)
         query = serializer.dump(result)
-        return jsonify(query)
+
+        return jsonify(query), 200
 
     categories = Categories.query.filter_by(user_id=data["userid"]).paginate(
         page=page, per_page=limit
@@ -213,7 +218,8 @@ def get_all_categories(current_user):
         "has_next": categories.has_next,
         "has_prev": categories.has_prev,
     }
-    return jsonify(all_categories, meta)
+
+    return jsonify(all_categories, meta), 200
 
 
 @app.route("/categories", methods=["POST"])
@@ -231,7 +237,8 @@ def create_categories(current_user):
         serializer = CategorySchema()
         newcategory = serializer.dump(new)
         return jsonify(newcategory), 200
-    return jsonify({"error": "category name already exists"})
+
+    return jsonify({"error": "category name already exists"}), 400
 
 
 @app.route("/categories/<int:id>", methods=["GET"])
@@ -245,7 +252,8 @@ def get_category(current_user, id):
             serializer = CategorySchema()
             acategory = serializer.dump(category)
             return jsonify(acategory), 200
-    return jsonify({"error": "category does not exist"}), 400
+
+    return jsonify({"error": "category does not exist"}), 404
 
 
 @app.route("/categories/<int:id>/edit", methods=["PUT"])
@@ -267,8 +275,10 @@ def edit_category(current_user, id):
             updated_category = Categories.edit(id, edited_category)
             serializer = CategorySchema()
             new_data = serializer.dump(updated_category)
+
             return jsonify(new_data), 200
-    return jsonify({"error": "category does not exist"}), 400
+
+    return jsonify({"error": "category does not exist"}), 404
 
 
 @app.route("/categories/<int:id>/delete", methods=["DELETE"])
@@ -279,7 +289,9 @@ def delete_category(id):
     for category in categories:
         if category.id == id:
             Categories.delete(id)
+
             return jsonify({"message": "Category was successfully deleted"}), 200
+
     return jsonify({"error": "category was not found"}), 400
 
 
@@ -298,7 +310,9 @@ def create_recipes(current_user):
         )
         serializer = RecipeSchema()
         newrecipe = serializer.dump(Recipes.create(new_recipe))
+
         return jsonify(newrecipe), 201
+
     return jsonify({"error": "something came up!"}), 400
 
 
@@ -317,14 +331,15 @@ def get_all_recipes(current_user):
             if limit < 1:
                 return jsonify({"message": "Limit must be a positive number"}), 400
         except Exception:
-            return jsonify({"message": "Check Limit Value!"})
+            return jsonify({"message": "Check Limit Value!"}), 400
     else:
         limit = 3
     if q:
         result = [key for key in myrecipes if key.name == q]
         serializer = RecipeSchema(many=True)
         query = serializer.dump(result)
-        return jsonify(query)
+
+        return jsonify(query), 200
 
     recipes = Recipes.query.filter_by(user_id=data["userid"]).paginate(
         page=page, per_page=limit
@@ -341,6 +356,7 @@ def get_all_recipes(current_user):
         "has_next": recipes.has_next,
         "has_prev": recipes.has_prev,
     }
+
     return jsonify(all_recipes, meta), 200
 
 
@@ -355,6 +371,7 @@ def get_recipe(current_user, id):
             serializer = RecipeSchema()
             arecipe = serializer.dump(recipe)
             return jsonify(arecipe), 200
+
     return jsonify({"error": "recipe was not found"}), 404
 
 
@@ -379,7 +396,9 @@ def edit_recipe(current_user, id):
             )
             serializer = RecipeSchema()
             new_data = serializer.dump(Recipes.edit(id, edited_recipe))
+
             return jsonify(new_data), 200
+
     return jsonify({"error": "something went wrong!"}), 400
 
 
@@ -391,7 +410,9 @@ def delete_recipe(id):
     for recipe in recipes:
         if recipe.id == id:
             Recipes.delete(id)
+
             return jsonify({"message": "Recipe was successfully deleted"}), 200
+
     return jsonify({"error": "recipe was not found"}), 404
 
 
@@ -401,7 +422,8 @@ def logout(current_user):
     token = request.headers["x-access-token"]
     invalid_token = Blacklist(revoked_token=token)
     Blacklist.save(invalid_token)
-    return jsonify({"success": "successfully logged out"})
+
+    return jsonify({"success": "successfully logged out"}), 200
 
 
 if __name__ == "__main__":
