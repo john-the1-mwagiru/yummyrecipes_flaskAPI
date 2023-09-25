@@ -37,7 +37,7 @@ class Users(db.Model):
         new_user = data
         db.session.add(new_user)
         db.session.commit()
-        
+
         return new_user
 
     @classmethod
@@ -47,7 +47,7 @@ class Users(db.Model):
         user.password_hash = data.password_hash
         user.name = data.name
         db.session.commit()
-        
+
         return user
 
     @classmethod
@@ -106,7 +106,7 @@ class Categories(db.Model):
         new_category = data
         db.session.add(new_category)
         db.session.commit()
-        
+
         return new_category
 
     @classmethod
