@@ -110,7 +110,7 @@ class RegisterUser(Resource):
 
 
 class LoginUser(Resource):
-    def post(self):
+    def get(self):
         auth = request.authorization
         if not auth or not auth.username or not auth.password:
             return make_response(
