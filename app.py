@@ -5,6 +5,7 @@ from flask_restful import Api, Resource
 from functools import wraps
 from marshmallow import Schema, fields
 from itsdangerous import URLSafeTimedSerializer
+from sqlalchemy import create_engine
 from werkzeug.security import generate_password_hash, check_password_hash
 from models import (
     Users,
@@ -44,6 +45,10 @@ app.config.update(
     )
 )
 mail = Mail(app)
+engine = create_engine(
+    "postgresql://postgres:Kenya2030**@localhost:5433/Yummy Recipes", echo_pool="debug"
+)
+c1 = engine.connect()
 
 
 def token_required(f):
