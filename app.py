@@ -25,7 +25,7 @@ app = Flask(__name__)
 app.config["SECRET_KEY"] = "asecret"
 app.config[
     "SQLALCHEMY_DATABASE_URI"
-] = "postgresql://postgres:Kenya2030**@localhost:5433/Yummy Recipes"
+] = "postgresql://postgres:Kenya2030**@localhost:5433/Yummy"
 migrate = Migrate(app, db)
 api = Api(app)
 db.init_app(app)
