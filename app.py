@@ -225,7 +225,7 @@ class CategoryList(Resource):
         return (all_categories, meta), 200
 
     @token_required
-    def post(self):
+    def post(self, current_user):
         token = request.headers["x-access-token"]
         data = jwt.decode(token, app.config["SECRET_KEY"], algorithms=["HS256"])
         if Categories.query.filter_by(name=request.json["name"]).first() is None:
