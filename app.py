@@ -25,7 +25,7 @@ app = Flask(__name__)
 app.config["SECRET_KEY"] = "asecret"
 app.config[
     "SQLALCHEMY_DATABASE_URI"
-] = "postgresql://postgres:Kenya2030**@localhost:5433/Yummy Recipes"
+] = "postgresql://postgres_:fl4pXyoFluiDzQZKHF5cYCCoaJcyuRBO@dpg-ckamsucg66mc73861gj0-a.oregon-postgres.render.com/yummy_recipes"
 migrate = Migrate(app, db)
 api = Api(app)
 db.init_app(app)
@@ -225,7 +225,7 @@ class CategoryList(Resource):
         return (all_categories, meta), 200
 
     @token_required
-    def post(self):
+    def post(self, current_user):
         token = request.headers["x-access-token"]
         data = jwt.decode(token, app.config["SECRET_KEY"], algorithms=["HS256"])
         if Categories.query.filter_by(name=request.json["name"]).first() is None:
