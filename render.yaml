@@ -1,0 +1,11 @@
+previewsEnabled: true
+services:
+  - type: web
+    plan: standard
+    name: app
+    env: python
+    envVars:
+      - key: PYTHON_VERSION
+        value:  3.11.4
+      - key: my_env
+        value: b3d887c4f25e53be08d8aac4ae5fd7da
